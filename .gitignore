@@ -6,3 +6,6 @@ Release/
 info.txt
 makefile copy
 TestDemo.ioc
+.vscode/browse.vc.db
+.vscode/browse.vc.db-wal
+.vscode/browse.vc.db-shm
