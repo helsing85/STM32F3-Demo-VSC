@@ -1,0 +1,8 @@
+build/
+Debug/
+Debug2/
+Release/
+
+info.txt
+makefile copy
+TestDemo.ioc
