@@ -3,8 +3,11 @@ TARGET= TestDemo
 
 # OUTDIR: directory to use for output
 OUTDIR = build
+MAINFILE_ELF = $(OUTDIR)/$(TARGET).elf
 MAINFILE_BIN = $(OUTDIR)/$(TARGET).bin
 MAINFILE_MAP = $(OUTDIR)/$(TARGET).map
+MAINFILE_LIST = $(OUTDIR)/$(TARGET).list
+MAINFILE_SIZE = default.size.stdout
 
 # Project directories
 PROJECT_DIR = Core
@@ -100,6 +103,7 @@ endif
 CC = arm-none-eabi-gcc
 LD = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
 SIZE = arm-none-eabi-size
 OPENOCD = openocd
 FLASH	= st-flash
@@ -112,7 +116,7 @@ OBJECTS = $(addprefix $(OUTDIR)/,$(notdir $(SOURCES:.c=.o)))
 ASM_OBJECTS = $(addprefix $(OUTDIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 
 # default: build bin
-all: $(OUTDIR)/$(TARGET).bin
+all: $(MAINFILE_BIN) secondary-outputs
 
 $(ASM_OBJECTS): $(ASM_SOURCES) | $(OUTDIR)
 	@echo -e "Assembling\t"$(CYAN)$(filter %$(subst .o,.s,$(@F)), $(ASM_SOURCES))$(NORMAL)
@@ -122,17 +126,25 @@ $(OBJECTS): $(SOURCES) | $(OUTDIR)
 	@echo -e "Compiling\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(SOURCES))$(NORMAL)
 	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(SOURCES))
 
-$(OUTDIR)/$(TARGET) $(MAINFILE_MAP): $(OBJECTS) $(ASM_OBJECTS)
+$(MAINFILE_ELF) $(MAINFILE_MAP): $(OBJECTS) $(ASM_OBJECTS)
 	@echo -e "Linking\t\t"$(CYAN)$^$(NORMAL)
 	@$(LD) $(LDFLAGS) -o $@ $^
 
-
-$(MAINFILE_BIN): $(OUTDIR)/$(TARGET)
+$(MAINFILE_BIN): $(MAINFILE_ELF)
 	@$(OBJCOPY) -O binary $< $@
+
+$(MAINFILE_LIST): $(MAINFILE_ELF)
+	@$(OBJDUMP) -h -S $(MAINFILE_ELF) > $(MAINFILE_LIST)
+
+$(MAINFILE_SIZE): $(MAINFILE_ELF)
+	@echo 'Size checks: $<'
+	@$(SIZE) $(MAINFILE_ELF)
 
 # create the output directory
 $(OUTDIR):
 	$(MKDIR) $(OUTDIR)
+
+secondary-outputs: $(MAINFILE_SIZE) $(MAINFILE_LIST)
 
 cleanall:
 	-$(RM) $(OUTDIR)
