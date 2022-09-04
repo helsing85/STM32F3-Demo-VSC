@@ -17,25 +17,16 @@ DIRVERS_HAL_DIR = Drivers/STM32F3xx_HAL_Driver
 MIDDLE_USB_DIR = Middlewares/ST/STM32_USB_Device_Library
 
 # SOURCES: list of input source sources
-SOURCES	 = $(shell find ./ -name '*.c')
-# SOURCE_DIR = $(PROJECT_DIR)/Src
-# SOURCES	 = $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(DRIVERS_BSP_DIR)/Components/i3g4250d
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(DRIVERS_BSP_DIR)/Components/l3gd20
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(DRIVERS_BSP_DIR)/Components/lsm303agr
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(DRIVERS_BSP_DIR)/Components/lsm303dlhc
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(DRIVERS_BSP_DIR)/STM32F3-Discovery
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(DIRVERS_HAL_DIR)/Src
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(MIDDLE_USB_DIR)/Class/HID/Src
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
-# SOURCE_DIR = $(MIDDLE_USB_DIR)/Core/Src
-# SOURCES	+= $(shell find $(SOURCE_DIR) -name '*.c')
+# SOURCES	 = $(shell find ./ -name '*.c')
+SOURCES	+= $(shell find $(PROJECT_DIR)/Src -name '*.c')
+SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/i3g4250d -name '*.c')
+SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/l3gd20 -name '*.c')
+SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/lsm303agr -name '*.c')
+SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/lsm303dlhc -name '*.c')
+SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/STM32F3-Discovery -name '*.c')
+SOURCES	+= $(shell find $(DIRVERS_HAL_DIR)/Src -name '*.c')
+SOURCES	+= $(shell find $(MIDDLE_USB_DIR)/Class/HID/Src -name '*.c')
+SOURCES	+= $(shell find $(MIDDLE_USB_DIR)/Core/Src -name '*.c')
 
 # ASM_SOURCE = assembly source files
 ASM_SOURCES += $(PROJECT_DIR)/Startup/startup_stm32f303vctx.s
@@ -106,7 +97,7 @@ OBJCOPY = arm-none-eabi-objcopy
 OBJDUMP = arm-none-eabi-objdump
 SIZE = arm-none-eabi-size
 OPENOCD = openocd
-FLASH	= st-flash
+GDB = arm-none-eabi-gdb
 RM      = rm -rf
 MKDIR	= mkdir -p
 #######################################
@@ -127,7 +118,7 @@ $(OBJECTS): $(SOURCES) | $(OUTDIR)
 	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(SOURCES))
 
 $(MAINFILE_ELF) $(MAINFILE_MAP): $(OBJECTS) $(ASM_OBJECTS)
-	@echo -e "Linking\t\t"$(CYAN)$^$(NORMAL)
+	@echo -e "Linking\t"$(CYAN)$^$(NORMAL)
 	@$(LD) $(LDFLAGS) -o $@ $^
 
 $(MAINFILE_BIN): $(MAINFILE_ELF)
@@ -147,16 +138,19 @@ $(OUTDIR):
 secondary-outputs: $(MAINFILE_SIZE) $(MAINFILE_LIST)
 
 cleanall:
-	-$(RM) $(OUTDIR)
+	$(RM) $(OUTDIR)
 
 clean:
-	-$(RM) $(OUTDIR)/*
-
-print:
-	-@echo $(OBJECTS)
-	-@echo $(ASM_OBJECTS)
+	$(RM) $(OUTDIR)/*
 
 version:
-	-$(CC) --version
+	@whereis $(CC)
+	@$(CC) --version
+
+openocd:
+	$(OPENOCD) -f config/openocd.cfg
+
+gdb:
+	$(GDB) -q $(MAINFILE_ELF)
 
 .PHONY: all clean
