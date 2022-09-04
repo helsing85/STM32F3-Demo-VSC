@@ -4,6 +4,7 @@ TARGET= TestDemo
 # OUTDIR: directory to use for output
 OUTDIR = build
 MAINFILE_BIN = $(OUTDIR)/$(TARGET).bin
+MAINFILE_MAP = $(OUTDIR)/$(TARGET).map
 
 # Project directories
 PROJECT_DIR = Core
@@ -80,8 +81,7 @@ LDFLAGS  = -mcpu=cortex-m4 -T$(LINKER_FILE) --specs=nosys.specs -Wall
 LDFLAGS += -Wl,--gc-sections -static
 LDFLAGS += --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb
 LDFLAGS += -Wl,--start-group -lc -lm -Wl,--end-group
-
-# -Wl,-Map="TestDemo.map" 
+LDFLAGS += -Wl,-Map=$(MAINFILE_MAP)
 
 #######################################
 # output configs
@@ -122,9 +122,10 @@ $(OBJECTS): $(SOURCES) | $(OUTDIR)
 	@echo -e "Compiling\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(SOURCES))$(NORMAL)
 	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(SOURCES))
 
-$(OUTDIR)/$(TARGET): $(OBJECTS) $(ASM_OBJECTS)
+$(OUTDIR)/$(TARGET) $(MAINFILE_MAP): $(OBJECTS) $(ASM_OBJECTS)
 	@echo -e "Linking\t\t"$(CYAN)$^$(NORMAL)
 	@$(LD) $(LDFLAGS) -o $@ $^
+
 
 $(MAINFILE_BIN): $(OUTDIR)/$(TARGET)
 	@$(OBJCOPY) -O binary $< $@
@@ -143,4 +144,7 @@ print:
 	-@echo $(OBJECTS)
 	-@echo $(ASM_OBJECTS)
 
-.PHONY: all clean print
+version:
+	-$(CC) --version
+
+.PHONY: all clean
