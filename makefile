@@ -9,6 +9,7 @@ endif
 # OUTDIR: directory to use for output
 BUILDDIR = build
 OUTDIR = $(BUILDDIR)/$(BUILD)
+OBJECTDIR = $(OUTDIR)/obj
 
 # Output files
 MAINFILE_ELF = $(OUTDIR)/$(TARGET).elf
@@ -117,21 +118,21 @@ MKDIR	= mkdir -p
 #######################################
 
 # list of object files, placed in the build directory regardless of source path
-OBJECTS = $(addprefix $(OUTDIR)/,$(notdir $(SOURCES:.c=.o)))
-ASM_OBJECTS = $(addprefix $(OUTDIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
+SRC_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(SOURCES:.c=.o)))
+ASM_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 
 # default: build bin
 all: $(MAINFILE_BIN) secondary-outputs
 
-$(ASM_OBJECTS): $(ASM_SOURCES) | $(OUTDIR)
+$(ASM_OBJECTS): $(ASM_SOURCES) | $(OBJECTDIR)
 	@echo -e "Assembling\t"$(CYAN)$(filter %$(subst .o,.s,$(@F)), $(ASM_SOURCES))$(NORMAL)
 	@$(CC) $(ASFLAGS) -c $(filter %$(subst .o,.s,$(@F)), $(ASM_SOURCES)) -o $@
 
-$(OBJECTS): $(SOURCES) | $(OUTDIR)
+$(SRC_OBJECTS): $(SOURCES) | $(OBJECTDIR)
 	@echo -e "Compiling\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(SOURCES))$(NORMAL)
 	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(SOURCES))
 
-$(MAINFILE_ELF) $(MAINFILE_MAP): $(OBJECTS) $(ASM_OBJECTS)
+$(MAINFILE_ELF) $(MAINFILE_MAP): $(SRC_OBJECTS) $(ASM_OBJECTS)
 	@echo -e "Linking\t"$(CYAN)$^$(NORMAL)
 	@$(LD) $(LDFLAGS) -o $@ $^
 
@@ -152,6 +153,9 @@ $(MAINFILE_SIZE): $(MAINFILE_ELF)
 $(OUTDIR):
 	$(MKDIR) $(OUTDIR)
 
+$(OBJECTDIR):
+	$(MKDIR) $(OBJECTDIR)
+
 secondary-outputs: $(MAINFILE_HEX) $(MAINFILE_SIZE) $(MAINFILE_LIST)
 
 cleanall:
@@ -169,5 +173,8 @@ openocd:
 
 gdb:
 	$(GDB) -q $(MAINFILE_ELF) -x config/openocd.gdb
+
+print:
+	@echo $(SRC_OBJECTS)
 
 .PHONY: all clean
