@@ -28,21 +28,21 @@ MIDDLE_USB_DIR = Middlewares/ST/STM32_USB_Device_Library
 
 # SOURCES: list of input source sources
 # SOURCES	 = $(shell find ./ -name '*.c')
-SOURCES	+= $(shell find $(PROJECT_DIR)/Src -name '*.c')
-SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/i3g4250d -name '*.c')
-SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/l3gd20 -name '*.c')
-SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/lsm303agr -name '*.c')
-SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/Components/lsm303dlhc -name '*.c')
-SOURCES	+= $(shell find $(DRIVERS_BSP_DIR)/STM32F3-Discovery -name '*.c')
-SOURCES	+= $(shell find $(DIRVERS_HAL_DIR)/Src -name '*.c')
-SOURCES	+= $(shell find $(MIDDLE_USB_DIR)/Class/HID/Src -name '*.c')
-SOURCES	+= $(shell find $(MIDDLE_USB_DIR)/Core/Src -name '*.c')
+CORE_SOURCES += $(shell find $(PROJECT_DIR)/Src -name '*.c')
+LIB_SOURCES  += $(shell find $(DRIVERS_BSP_DIR)/Components/i3g4250d -name '*.c')
+LIB_SOURCES  += $(shell find $(DRIVERS_BSP_DIR)/Components/l3gd20 -name '*.c')
+LIB_SOURCES  += $(shell find $(DRIVERS_BSP_DIR)/Components/lsm303agr -name '*.c')
+LIB_SOURCES  += $(shell find $(DRIVERS_BSP_DIR)/Components/lsm303dlhc -name '*.c')
+LIB_SOURCES  += $(shell find $(DRIVERS_BSP_DIR)/STM32F3-Discovery -name '*.c')
+LIB_SOURCES  += $(shell find $(DIRVERS_HAL_DIR)/Src -name '*.c')
+USB_SOURCES  += $(shell find $(MIDDLE_USB_DIR)/Class/HID/Src -name '*.c')
+USB_SOURCES  += $(shell find $(MIDDLE_USB_DIR)/Core/Src -name '*.c')
 
 # ASM_SOURCE = assembly source files
 ASM_SOURCES += $(PROJECT_DIR)/Startup/startup_stm32f303vctx.s
 
 # INCLUDES: list of includes, by default, use Includes directory
-INCLUDES = -Iinclude
+INCLUDES  = -Iinclude
 INCLUDES += -I$(PROJECT_DIR)/Inc
 INCLUDES += -I$(DRIVERS_BSP_DIR)/Components/Common
 INCLUDES += -I$(DRIVERS_BSP_DIR)/Components/i3g4250d
@@ -117,8 +117,10 @@ RM      = rm -rf
 MKDIR	= mkdir -p
 #######################################
 
-# list of object files, placed in the build directory regardless of source path
-SRC_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(SOURCES:.c=.o)))
+# list of object files, placed in the build/obj directory regardless of source path
+CORE_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(CORE_SOURCES:.c=.o)))
+LIB_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(LIB_SOURCES:.c=.o)))
+USB_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(USB_SOURCES:.c=.o)))
 ASM_OBJECTS = $(addprefix $(OBJECTDIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 
 # default: build bin
@@ -128,26 +130,37 @@ $(ASM_OBJECTS): $(ASM_SOURCES) | $(OBJECTDIR)
 	@echo -e "Assembling\t"$(CYAN)$(filter %$(subst .o,.s,$(@F)), $(ASM_SOURCES))$(NORMAL)
 	@$(CC) $(ASFLAGS) -c $(filter %$(subst .o,.s,$(@F)), $(ASM_SOURCES)) -o $@
 
-$(SRC_OBJECTS): $(SOURCES) | $(OBJECTDIR)
-	@echo -e "Compiling\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(SOURCES))$(NORMAL)
-	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(SOURCES))
+$(CORE_OBJECTS): $(CORE_SOURCES) | $(OBJECTDIR)
+	@echo -e "Compiling Core\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(CORE_SOURCES))$(NORMAL)
+	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(CORE_SOURCES))
 
-$(MAINFILE_ELF) $(MAINFILE_MAP): $(SRC_OBJECTS) $(ASM_OBJECTS)
+$(LIB_OBJECTS): $(LIB_SOURCES) | $(OBJECTDIR)
+	@echo -e "Compiling Drivers\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(LIB_SOURCES))$(NORMAL)
+	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(LIB_SOURCES))
+
+$(USB_OBJECTS): $(USB_SOURCES) | $(OBJECTDIR)
+	@echo -e "Compiling USB\t"$(CYAN)$(filter %$(subst .o,.c,$(@F)), $(USB_SOURCES))$(NORMAL)
+	@$(CC) $(CFLAGS) -o $@ $(filter %$(subst .o,.c,$(@F)), $(USB_SOURCES))
+
+$(MAINFILE_ELF): $(CORE_OBJECTS) $(LIB_OBJECTS) $(USB_OBJECTS) $(ASM_OBJECTS)
 	@echo -e "Linking\t"$(CYAN)$^$(NORMAL)
 	@$(LD) $(LDFLAGS) -o $@ $^
 
 $(MAINFILE_BIN): $(MAINFILE_ELF)
+	@echo -e "Creating Binary\t"$(CYAN)$@$(NORMAL)
 	@$(OBJCOPY) -O binary $< $@
 
 $(MAINFILE_HEX): $(MAINFILE_ELF)
+	@echo -e "Creating HEX \t"$(CYAN)$@$(NORMAL)
 	@$(OBJCOPY) -O ihex $< $@
 
 $(MAINFILE_LIST): $(MAINFILE_ELF)
-	@$(OBJDUMP) -h -S $(MAINFILE_ELF) > $(MAINFILE_LIST)
+	@echo -e "Creating List\t"$(CYAN)$@$(NORMAL)
+	@$(OBJDUMP) -h -S $< > $@
 
 $(MAINFILE_SIZE): $(MAINFILE_ELF)
-	@echo 'Size checks: $<'
-	@$(SIZE) $(MAINFILE_ELF)
+	@echo -e "Size checking\t"$(CYAN)$<$(NORMAL)
+	@$(SIZE) $<
 
 # create the output directory
 $(OUTDIR):
@@ -156,7 +169,7 @@ $(OUTDIR):
 $(OBJECTDIR):
 	$(MKDIR) $(OBJECTDIR)
 
-secondary-outputs: $(MAINFILE_HEX) $(MAINFILE_SIZE) $(MAINFILE_LIST)
+secondary-outputs: $(MAINFILE_HEX) $(MAINFILE_LIST) $(MAINFILE_SIZE)
 
 cleanall:
 	$(RM) $(BUILDDIR)
@@ -174,7 +187,4 @@ openocd:
 gdb:
 	$(GDB) -q $(MAINFILE_ELF) -x config/openocd.gdb
 
-print:
-	@echo $(SRC_OBJECTS)
-
-.PHONY: all clean
+.PHONY: all clean version gdb openocd
