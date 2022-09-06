@@ -168,6 +168,6 @@ openocd:
 	$(OPENOCD) -f config/openocd.cfg
 
 gdb:
-	$(GDB) -q $(MAINFILE_ELF)
+	$(GDB) -q $(MAINFILE_ELF) -x config/openocd.gdb
 
 .PHONY: all clean
