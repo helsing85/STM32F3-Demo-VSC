@@ -1,10 +1,19 @@
 # Project name
 TARGET= TestDemo
 
+# Release type
+ifneq ($(BUILD),release)
+    BUILD = debug
+endif
+
 # OUTDIR: directory to use for output
-OUTDIR = build
+BUILDDIR = build
+OUTDIR = $(BUILDDIR)/$(BUILD)
+
+# Output files
 MAINFILE_ELF = $(OUTDIR)/$(TARGET).elf
 MAINFILE_BIN = $(OUTDIR)/$(TARGET).bin
+MAINFILE_HEX = $(OUTDIR)/$(TARGET).hex
 MAINFILE_MAP = $(OUTDIR)/$(TARGET).map
 MAINFILE_LIST = $(OUTDIR)/$(TARGET).list
 MAINFILE_SIZE = default.size.stdout
@@ -51,22 +60,27 @@ INCLUDES += -I../
 # Linker file
 LINKER_FILE = STM32F303VCTX_FLASH.ld
 
+# Flags for differrnet builds
+FLAGS_DEBUG = -ggdb3 -O0 -DDEBUG
+FLAGS_RELEASE = -Os #Optimize for size
+ifneq ($(BUILD),release)
+    FLAGS_BUILD = $(FLAGS_DEBUG)
+else
+	FLAGS_BUILD = $(FLAGS_RELEASE)
+endif
+
 # Compiler flags
-##CFLAGS = -g -mthumb -mthumb-interwork -mcpu=cortex-m4
-##CFLAGS += -mfpu=fpv4-sp-d16 -mfloat-abi=softfp
-##CFLAGS += -Os -MD -std=c99 -Wall -Wextra #-pedantic
-##CFLAGS += -fsingle-precision-constant -Wdouble-promotion
-##CFLAGS += -ffunction-sections -fdata-sections
-##CFLAGS += -D$(MCU) -DF_CPU=72000000 $(INCLUDES) -c
-CFLAGS  = -mcpu=cortex-m4 -std=gnu11 -ggdb3 
-CFLAGS += -DDEBUG -DUSE_HAL_DRIVER -DSTM32F303xC -DUSE_STM32F3_DISCO -c
-CFLAGS += -O0 -ffunction-sections -fdata-sections 
+CFLAGS  = -mcpu=cortex-m4 -std=gnu11 
+CFLAGS += $(FLAGS_BUILD)
+CFLAGS += -DUSE_HAL_DRIVER -DSTM32F303xC -DUSE_STM32F3_DISCO -c
+CFLAGS += -ffunction-sections -fdata-sections 
 CFLAGS += -Wall -fstack-usage -MMD -MP
 CFLAGS += --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb 
 CFLAGS += $(INCLUDES)
 
 # Assember compiler flags
-ASFLAGS  = -mcpu=cortex-m4 -g3 -DDEBUG 
+ASFLAGS  = -mcpu=cortex-m4 
+ASFLAGS += $(FLAGS_BUILD)
 ASFLAGS += -x assembler-with-cpp -MMD -MP 
 ASFLAGS += --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb
 
@@ -124,6 +138,9 @@ $(MAINFILE_ELF) $(MAINFILE_MAP): $(OBJECTS) $(ASM_OBJECTS)
 $(MAINFILE_BIN): $(MAINFILE_ELF)
 	@$(OBJCOPY) -O binary $< $@
 
+$(MAINFILE_HEX): $(MAINFILE_ELF)
+	@$(OBJCOPY) -O ihex $< $@
+
 $(MAINFILE_LIST): $(MAINFILE_ELF)
 	@$(OBJDUMP) -h -S $(MAINFILE_ELF) > $(MAINFILE_LIST)
 
@@ -135,10 +152,10 @@ $(MAINFILE_SIZE): $(MAINFILE_ELF)
 $(OUTDIR):
 	$(MKDIR) $(OUTDIR)
 
-secondary-outputs: $(MAINFILE_SIZE) $(MAINFILE_LIST)
+secondary-outputs: $(MAINFILE_HEX) $(MAINFILE_SIZE) $(MAINFILE_LIST)
 
 cleanall:
-	$(RM) $(OUTDIR)
+	$(RM) $(BUILDDIR)
 
 clean:
 	$(RM) $(OUTDIR)/*
