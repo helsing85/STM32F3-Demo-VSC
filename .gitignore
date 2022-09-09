@@ -9,3 +9,5 @@ TestDemo.ioc
 .vscode/browse.vc.db
 .vscode/browse.vc.db-wal
 .vscode/browse.vc.db-shm
+.vscode/.cortex-debug.peripherals.state.json
+.vscode/.cortex-debug.registers.state.json
