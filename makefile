@@ -1,5 +1,5 @@
 # Project name
-TARGET= TestDemo
+TARGET = STM32F3Discovery-Demo
 
 # Release type
 ifneq ($(BUILD),release)

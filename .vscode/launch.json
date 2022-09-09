@@ -1,11 +1,11 @@
 {
     "version": "0.2.0",
-    "projectName": "TestDemo",
+    "projectName": "STM32F3Discovery-Demo",
     "configurations": [
         {
             "name": "STlink debug",
             "cwd": "${workspaceRoot}",
-            "executable": "${workspaceRoot}/build/debug/TestDemo.elf",
+            "executable": "${workspaceRoot}/build/debug/STM32F3Discovery-Demo.elf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "stutil",
