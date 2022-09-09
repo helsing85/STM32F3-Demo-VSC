@@ -17,7 +17,8 @@
                 "make -j4 all"
             ], // you can execute command instead of task
             "svdFile": "${workspaceRoot}/config/STM32F303.svd", // Include svd to watch device peripherals
-            "swoConfig": {} // currently (v1.7.0) not supported
+            "swoConfig": {}, // currently (v1.7.0) not supported
+            "showDevDebugOutput": "none" //raw, parsed, both, vscode
         }
     ]
 }
