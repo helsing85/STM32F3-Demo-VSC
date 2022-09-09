@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "projectName": "TestDemo",
+    "configurations": [
+        {
+            "name": "STlink debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceRoot}/build/debug/TestDemo.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "stutil",
+            "device": "STM32F303VC",
+            "interface": "swd",
+            "runToEntryPoint": "main", // else it starts at reset handler - not interested
+            //"preLaunchTask": "Build all", // configured in tasks.json
+            "preLaunchCommands": [
+                "make -j4 all"
+            ], // you can execute command instead of task
+            "svdFile": "${workspaceRoot}/config/STM32F303.svd", // Include svd to watch device peripherals
+            "swoConfig": {} // currently (v1.7.0) not supported
+        }
+    ]
+}
